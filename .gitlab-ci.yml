@@ -1,0 +1,36 @@
+stages:
+  - build
+  - deploy
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  tags:
+    - dockerbuild
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker compose -f docker-compose.yml -f docker-compose.cicd.yml build --push server client
+  rules:
+    - if: $CI_COMMIT_BRANCH
+
+deploy:
+  stage: deploy
+  tags:
+    - fyp
+  needs:
+    - build
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+  script:
+    - docker compose -f docker-compose.yml -f docker-compose.cicd.yml config > production.yml
+    - docker compose -f production.yml -p ${CI_PROJECT_PATH_SLUG} down --remove-orphans
+    - docker compose -f production.yml -p ${CI_PROJECT_PATH_SLUG} up --pull always --wait
+  environment:
+    name: prod
+    url: http://${CI_PROJECT_PATH_SLUG}.msc.cs.nuim.ie
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: manual

@@ -1,0 +1,17 @@
+# Local-only host port bindings.
+#
+# Use this file when running on your laptop:
+# docker compose -f docker-compose.yml -f docker-compose.local.yml up --build
+
+services:
+  mongo:
+    ports:
+      - "27017:27017"
+
+  server:
+    ports:
+      - "5000:5000"
+
+  client:
+    ports:
+      - "3000:80"

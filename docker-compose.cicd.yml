@@ -1,0 +1,22 @@
+# GitLab CI/CD deployment override for the Maynooth fyp server.
+#
+# Only the client is exposed publicly. The client nginx container proxies /api
+# to the internal Express service named "server".
+
+services:
+  server:
+    image: ${CI_REGISTRY_IMAGE}/server:${CI_COMMIT_REF_SLUG}
+    environment:
+      NODE_ENV: production
+      CLIENT_URL: http://${CI_PROJECT_PATH_SLUG}.msc.cs.nuim.ie
+      GOOGLE_CALLBACK_URL: http://${CI_PROJECT_PATH_SLUG}.msc.cs.nuim.ie/api/auth/google/callback
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in Settings > CI/CD > Variables}
+      SESSION_SECRET: ${SESSION_SECRET:-change-me}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-placeholder}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-placeholder}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-placeholder}
+
+  client:
+    image: ${CI_REGISTRY_IMAGE}/client:${CI_COMMIT_REF_SLUG}
+    ports:
+      - "127.0.0.1:${CI_API_PORT}:80"
